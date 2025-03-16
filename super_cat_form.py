@@ -571,6 +571,34 @@ class SuperCatForm(CatForm):
 
         return super().message_closed()
 
+    def submit_close(self, form_data):
+        """
+        Submit the form.
+        If the form has a parent form, emit an event and return the parent form message.
+        Otherwise, return the submit output.
+
+        Args:
+            form_data: The form data to submit
+
+        Returns:
+            AgentOutput: The message to display after the form is submitted
+        """
+
+        if self.parent_form is not None:
+            self.parent_form.events.emit(
+                FormEvent.INSIDE_FORM_CLOSED,
+                {
+                    "form_data": form_data,
+                    "output": self.submit(form_data)
+                },
+                self.name
+            )
+
+            # Return message of the external (old) form
+            return self.parent_form.message()
+
+        # By default, return the submit output
+        return self.submit(form_data)
     def next(self):
 
         if self._state == CatFormState.WAIT_CONFIRM:
@@ -583,9 +611,7 @@ class SuperCatForm(CatForm):
                     },
                     self.name
                 )
-                submission_result = self.submit(self._model)
-                self._restore_parent_form()
-                return submission_result
+                return self.submit_close(self._model)
 
             else:
                 if self.check_exit_intent():
@@ -627,7 +653,7 @@ class SuperCatForm(CatForm):
                 self._state = CatFormState.WAIT_CONFIRM
             else:
                 self._state = CatFormState.CLOSED
-                return self.submit(self._model)
+                return self.submit_close(self._model)
 
         return self.message()
 
