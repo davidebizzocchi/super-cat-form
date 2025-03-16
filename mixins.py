@@ -70,6 +70,7 @@ class StepByStepMixin:
     def next(self):
         # Set the first form
         if not self.__is_first_form_set:
+            self.__is_first_form_set = True
 
             # Modify the active form
             self.active_form = self.first_form
