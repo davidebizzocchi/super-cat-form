@@ -65,7 +65,16 @@ class StepByStepMixin:
 
     def _setup_default_handlers(self):
         super()._setup_default_handlers()
-        self.events.on(FormEvent.FORM_INITIALIZED, self.create_step_forms)
+
+        self.events.on(
+            FormEvent.FORM_INITIALIZED,
+            self.create_step_forms
+        )
+
+        self.events.on(
+            FormEvent.INSIDE_FORM_CLOSED,
+            self.fill_model_with_previous_values
+        )
 
     def next(self):
         # Set the first form
@@ -82,6 +91,46 @@ class StepByStepMixin:
             return self.first_form.next()
         
         return super().next()
+    
+    def fill_model_with_previous_values(self, context):
+        
+        prev_form_names = list(self.prev_results.keys())
+        prev_form_values = list(self.prev_results.values())
+
+        # Check the form that trigger event, is a next_form and not a inside_form
+        if not context.form_id in prev_form_names:
+            return
+
+        log.debug(f"[EVENT: _on_previous_form_inactive] {self.name} previous form is inactive (by next_form)")
+        
+        results = {}
+        for field_name, field_value in zip(prev_form_names, prev_form_values):
+            results[field_name] = getattr(field_value, field_name, None)
+
+        model = self.model_getter().model_validate(results)
+
+        # for field_name, field_value in zip(prev_form_names, prev_form_values):
+        #     if hasattr(model, field_name):
+        #         setattr(model, field_name, field_value)
+        
+        old_model = self._model.copy() if self._model is not None else {}
+        self._model = model.model_dump()
+
+        # emit events for updated fields
+        updated_fields = {
+            k: v for k, v in self._model.items()
+            if k not in old_model or old_model[k] != v
+        }
+
+        if updated_fields:
+            self.events.emit(
+                FormEvent.FIELD_UPDATED,
+                {
+                    "fields": updated_fields,
+                    "old_values": {k: old_model.get(k) for k in updated_fields}
+                },
+                self.name
+            )
 
     def create_step_forms(self, context):
         self._field_models = self._create_single_field_models(self.model_getter())
