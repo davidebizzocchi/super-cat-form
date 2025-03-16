@@ -157,11 +157,11 @@ class SuperCatForm(CatForm):
         # Reset the active form when the form is submitted or closed
         self.events.on(
             FormEvent.FORM_SUBMITTED,
-            self.__reset_active_form
+            self._restore_parent_form
         )
         self.events.on(
             FormEvent.FORM_CLOSED,
-            self.__reset_active_form
+            self._restore_parent_form
         )
 
     def _log_event(self, event: FormEventContext):
@@ -566,7 +566,7 @@ class SuperCatForm(CatForm):
                 self.name
             )
 
-    def __reset_active_form(self, *args, **kwargs):
+    def _restore_parent_form(self, *args, **kwargs):
         """
         Reset the active form to the previous form, if exists.
         """
