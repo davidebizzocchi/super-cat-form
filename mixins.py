@@ -106,10 +106,6 @@ class StepByStepMixin:
             results[field_name] = getattr(field_value, field_name, None)
 
         model = self.model_getter().model_validate(results)
-
-        # for field_name, field_value in zip(prev_form_names, prev_form_values):
-        #     if hasattr(model, field_name):
-        #         setattr(model, field_name, field_value)
         
         old_model = self._model.copy() if self._model is not None else {}
         self._model = model.model_dump()
