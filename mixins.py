@@ -75,9 +75,7 @@ class StepByStepMixin:
             # Modify the active form
             self.active_form = self.first_form
 
-            self.__is_first_form_set = True
-
-            # Initialize the actual form
+            # Initialize this form
             super().next()
 
             # Return the new form initialiazed
