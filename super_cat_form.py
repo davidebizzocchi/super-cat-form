@@ -51,6 +51,9 @@ class SuperCatForm(CatForm):
     # Track the form that started this form (if any)
     parent_form = None
 
+    # Track the next form to activate when this form is closed
+    next_form = None
+
     # List of inside forms, automatically create a form_tool for calling the inside form
     inside_forms = []
 
@@ -86,6 +89,15 @@ class SuperCatForm(CatForm):
                 self.active_form = self
 
         self.first_message_index = len(self.cat.working_memory.history) - 1
+
+        if self.next_form is not None:
+            self.parent_form = self.next_form(
+                cat=self.cat,
+                parent_form=self.parent_form
+            )
+
+            # Initialize the new form
+            self.parent_form.next()
 
     def super_llm(self, prompt: str | ChatPromptTemplate, params: dict = None, stream: bool = False) -> str:
 
@@ -559,7 +571,16 @@ class SuperCatForm(CatForm):
         Reset the active form to the previous form, if exists.
         """
         if self.parent_form is not None:
-            self.cat.working_memory.active_form = self.parent_form
+            self.active_form = self.parent_form
+
+            if self.next_form is not None:
+                self.events.emit(
+                    FormEvent.NEXT_FORM_ACTIVE,
+                    {
+                        "instance": self.next_form
+                    },
+                    self.name
+                )
 
         if self.delete_messages:
             del self.cat.working_memory.history[self.first_message_index:]
