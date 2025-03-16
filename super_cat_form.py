@@ -203,7 +203,7 @@ class SuperCatForm(CatForm):
                         # technically just one, but we like to be precise
                         if is_first:
                             is_first = False
-                            
+
                             if i == 0:
                                 break
 
@@ -283,7 +283,7 @@ class SuperCatForm(CatForm):
         """
         for form_class in cls.inside_forms:
             if issubclass(form_class, CatForm):
-                
+
                 # Format the form class name into snake_case
                 formatted_form_name = cls.format_class_name(form_class.name or form_class.__name__)
                 tool_name = f"start_form_{formatted_form_name}"
@@ -496,10 +496,10 @@ class SuperCatForm(CatForm):
     def start_sub_form(self, form_class):
         """
         Create and activate a new form, saving this form as the parent form
-        
+
         Args:
             form_class: The form class to instantiate
-            
+
         Returns:
             str: The initial message from the new form
         """
@@ -510,7 +510,7 @@ class SuperCatForm(CatForm):
             # # Set the parent form reference
             parent_form=self
         )
-        
+
         # Activate the new form
         self.cat.working_memory.active_form = new_form
 
@@ -522,9 +522,9 @@ class SuperCatForm(CatForm):
             },
             self.name
         )
-        
+
         log.debug(f"Started sub-form: {new_form.name} from parent: {self.name}")
-        
+
         # Return the first message of the new form
         return new_form.next()["output"]
 
@@ -670,7 +670,7 @@ class SuperCatForm(CatForm):
     @property
     def active_form(self):
         return self.cat.working_memory.active_form
-    
+
     @active_form.setter
     def active_form(self, form):
         self.cat.working_memory.active_form = form
