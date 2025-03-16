@@ -163,10 +163,3 @@ class StepByStepMixin:
             (SuperCatForm,),
             self.get_step_form_kwargs(form_name, model_class, field_info, next_form)
         )
-
-    def _get_field_model(self, field_name: str) -> type[BaseModel]:
-        return self._field_models.get(field_name)
-    
-    def _get_field_model_instance(self, field_name: str, field_data: dict) -> BaseModel:
-        field_model = self._get_field_model(field_name)
-        return field_model(**field_data)
