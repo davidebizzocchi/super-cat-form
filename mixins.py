@@ -46,7 +46,6 @@ class StepByStepMixin:
     
     @staticmethod
     def _create_single_field_models(base_model: type[BaseModel]) -> dict[str, type[BaseModel]]:
-
         field_models = {}
         for field_name, field_info in base_model.model_fields.items():
             field_models[field_name] = (
@@ -152,19 +151,21 @@ class StepByStepMixin:
         )
         self.__is_first_form_set = False
 
-    def _create_form_class(self, form_name, model_class: type[BaseModel], field_info, next_form=None) -> SuperCatForm:
-        form_class_name = self.format_class_name(f"{model_class.__name__}Form")
-        return type(
-            form_class_name,
-            (SuperCatForm,),
-            {
-                "model_class": model_class,
-                "ask_confirm": True,
-                "description": field_info.description or f"{model_class.__name__} form",
-                "next_form": next_form,
-                "name": form_name,
-                "submit": self.default_submit,
+    def get_step_form_kwargs(self, form_name, model_class: type[BaseModel], field_info, next_form=None) -> dict:
+        {
+            "model_class": model_class,
+            "ask_confirm": True,
+            "description": field_info.description or f"{model_class.__name__} form",
+            "next_form": next_form,
+            "name": form_name,
+            "submit": self.default_submit,
             }
+
+    def _create_form_class(self, form_name, model_class: type[BaseModel], field_info, next_form=None) -> SuperCatForm:
+        return type(
+            self.format_class_name(f"{model_class.__name__}Form"),
+            (SuperCatForm,),
+            self.get_step_form_kwargs(form_name, model_class, field_info, next_form)
         )
 
     def _get_field_model(self, field_name: str) -> type[BaseModel]:
