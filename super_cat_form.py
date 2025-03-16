@@ -560,6 +560,15 @@ class SuperCatForm(CatForm):
                 self.name
             )
 
+    def create_prev_results_in_parent(self, *args, **kwargs):
+        """
+        Create the prev_results in the parent form.
+        """
+        self.parent_form.prev_results = self.prev_results.copy()
+        self.parent_form.prev_results[self.name] = self.form_data_validated
+
+        log.error(f"new prev result in parent_form: {self.parent_form.prev_results}")
+
     def _on_next_form_actived(self, context: FormEventContext):
         """
         Called when a new next form is activated.
@@ -628,6 +637,8 @@ class SuperCatForm(CatForm):
         """
 
         if self.parent_form is not None:
+            self.create_prev_results_in_parent()
+
             self.parent_form.events.emit(
                 FormEvent.INSIDE_FORM_CLOSED,
                 {
