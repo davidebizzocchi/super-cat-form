@@ -183,7 +183,7 @@ class SuperCatForm(CatForm):
 
         # Previous form inactivation
         self.events.on(
-            FormEvent.NEXT_FORM_ACTIVE,
+            FormEvent.PREVIOUS_FORM_INACTIVE,
             self._on_previous_form_inactive
         )
 
