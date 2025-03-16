@@ -567,8 +567,6 @@ class SuperCatForm(CatForm):
         self.parent_form.prev_results = self.prev_results.copy()
         self.parent_form.prev_results[self.name] = self.form_data_validated
 
-        log.error(f"new prev result in parent_form: {self.parent_form.prev_results}")
-
     def _on_next_form_actived(self, context: FormEventContext):
         """
         Called when a new next form is activated.

@@ -28,7 +28,6 @@ class HumanFriendlyInteractionsMixin:
 
 
 def base_submit(self, form_data):
-    log.error(f"Form data: {form_data}, form name: {self.name}, form active: {self.active_form}")
     form_result = self.form_data_validated
 
     if form_result is None:
@@ -49,7 +48,6 @@ class StepByStepMixin:
 
         field_models = {}
         for field_name, field_info in base_model.model_fields.items():
-            log.error(f"Field name: {field_name}, field info: {field_info}, {type(field_info)}")
             field_models[field_name] = (
                 type(
                     f"{base_model.__name__}_{field_name}",
@@ -134,23 +132,17 @@ class StepByStepMixin:
 
     def create_step_forms(self, context):
         self._field_models = self._create_single_field_models(self.model_getter())
-        log.error(f"Field models: {pprint.pformat(self._field_models)}")
         self._form_classes = {}
 
         field_names = list(self._field_models.keys())
-        log.error(f"Field names: {field_names}")
 
         last_form = None
         for i in range(len(field_names)):
             field_name = field_names[i]
             field_model, field_info = self._field_models[field_name]
 
-            log.error(f"\n\nField name: {field_name}, field model: {field_model}, field info: {field_info}, last form: {last_form.name if last_form else None}")
             last_form = self._create_form_class(field_name, field_model, field_info, last_form)
             self._form_classes[field_name] = last_form
-
-        log.error(f"Form classes: {pprint.pformat(self._form_classes)}")
-        log.error(f"First form: {last_form}, type: {last_form.name}")
 
         # Now start the first form and specify need set it
         self.first_form: SuperCatForm = last_form(
