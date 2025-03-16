@@ -33,6 +33,7 @@ class FormEvent(Enum):
     INSIDE_FORM_ACTIVE = "inside_form_active"
     INSIDE_FORM_CLOSED = "inside_form_closed"
     NEXT_FORM_ACTIVE = "next_form_active"
+    PREVIOUS_FORM_INACTIVE = "previous_form_inactive"
 
 class FormEventContext(BaseModel):
     timestamp: datetime

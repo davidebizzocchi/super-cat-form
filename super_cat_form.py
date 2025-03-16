@@ -63,6 +63,10 @@ class SuperCatForm(CatForm):
     # If True, delete all messages of this form when is closed
     delete_messages = False
 
+    # Result of (eventual) previos form
+    # [form.name, form.form_data_validated]
+    prev_results: Dict[str, Dict] = {}
+
     def __init__(self, cat, parent_form=None):
         super().__init__(cat)
         
@@ -168,6 +172,19 @@ class SuperCatForm(CatForm):
         self.events.on(
             FormEvent.FORM_CLOSED,
             self._restore_parent_form
+        )
+
+
+        # Next form activation
+        self.events.on(
+            FormEvent.NEXT_FORM_ACTIVE,
+            self._on_next_form_actived
+        )
+
+        # Previous form inactivation
+        self.events.on(
+            FormEvent.NEXT_FORM_ACTIVE,
+            self._on_previous_form_inactive
         )
 
     def _log_event(self, event: FormEventContext):
@@ -543,6 +560,26 @@ class SuperCatForm(CatForm):
                 self.name
             )
 
+    def _on_next_form_actived(self, context: FormEventContext):
+        """
+        Called when a new next form is activated.
+        Add this form_data to previous result of new form
+        """
+
+        log.debug(f"[EVENT: _on_next_form_actived] {self.name} new next form activated")
+
+        new_form = context.data.get("instance")
+
+        new_form.prev_results = self.prev_results.copy()
+        new_form.prev_results[self.name] = [self.form_data_validated]
+
+    def _on_previous_form_inactive(self, context: FormEventContext):
+        """
+        Called when the previous form is inactivated, so this is now active.
+        """
+
+        log.debug(f"[EVENT: _on_previous_form_inactive] {self.name} previous form is inactive (by next_form)")
+
     def _restore_parent_form(self, *args, **kwargs):
         """
         Reset the active form to the previous form, if exists.
@@ -556,6 +593,12 @@ class SuperCatForm(CatForm):
                     {
                         "instance": self.next_form
                     },
+                    self.name
+                )
+
+                self.next_form.events.emit(
+                    FormEvent.PREVIOUS_FORM_INACTIVE,
+                    {},
                     self.name
                 )
 
