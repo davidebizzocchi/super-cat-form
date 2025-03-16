@@ -526,7 +526,7 @@ class SuperCatForm(CatForm):
         # Send the submit output to chat
         self.cat.send_chat_message(submit_output["output"])
 
-    def _on_form_closed(self, form_data):
+    def _on_form_closed(self, context: FormEventContext):
         """
         Called when the form is closed.
         """
@@ -537,7 +537,7 @@ class SuperCatForm(CatForm):
             self.parent_form.events.emit(
                 FormEvent.INSIDE_FORM_CLOSED,
                 {
-                    "form_data": form_data,
+                    "form_data": context.data.get("form_data"),
                     "output": self.message_closed(force=True)
                 },
                 self.name
