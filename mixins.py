@@ -97,7 +97,7 @@ class StepByStepMixin:
             field_model, field_info = self._field_models[field_name]
 
             log.error(f"\n\nField name: {field_name}, field model: {field_model}, field info: {field_info}, last form: {last_form.name if last_form else None}")
-            last_form = self._create_form_class(field_model, field_info, last_form)
+            last_form = self._create_form_class(field_name, field_model, field_info, last_form)
             self._form_classes[field_name] = last_form
 
         log.error(f"Form classes: {pprint.pformat(self._form_classes)}")
@@ -110,10 +110,10 @@ class StepByStepMixin:
         )
         self.__is_first_form_set = False
 
-    def _create_form_class(self, model_class: type[BaseModel], field_info, next_form=None) -> SuperCatForm:
-        form_name = self.format_class_name(f"{model_class.__name__}Form")
+    def _create_form_class(self, form_name, model_class: type[BaseModel], field_info, next_form=None) -> SuperCatForm:
+        form_class_name = self.format_class_name(f"{model_class.__name__}Form")
         return type(
-            form_name,
+            form_class_name,
             (SuperCatForm,),
             {
                 "model_class": model_class,
