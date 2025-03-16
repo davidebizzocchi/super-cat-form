@@ -32,6 +32,7 @@ class FormEvent(Enum):
     # Inside form events
     INSIDE_FORM_ACTIVE = "inside_form_active"
     INSIDE_FORM_CLOSED = "inside_form_closed"
+    NEXT_FORM_ACTIVE = "next_form_active"
 
 
 class FormEventContext(BaseModel):
