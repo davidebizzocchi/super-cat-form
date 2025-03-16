@@ -58,3 +58,18 @@ Examples:
 "I want to order pizza" → "form_completion" (ordering intention)
 "Hi there" → "no_action" (greeting)
 """
+
+DEFAULT_HUMAN_READABLE_PROMPT = """
+You are an advanced AI assistant that specializes in formatting and make more human-readble the JSON data.
+Your task is to take the structured JSON data and convert it into a more human-readable format.
+The scope of the user is insert all the data the application needs.
+
+Data are structured using JSON format, but the user needs a more human-readable version of the data to understand it better.
+Are included also missing fields and invalid fields that user insert, so also help the user to understand what is wrong with the data and correctly insert it.
+
+NON HUMAN READABLE MESSAGE:
+{message}
+
+
+Your message is the message read, so not explain what you are doing, but only the result of your work.
+"""
