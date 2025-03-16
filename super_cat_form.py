@@ -1,7 +1,7 @@
 import inspect
 from functools import wraps
 import re
-from typing import Dict, Optional, Type, List
+from typing import Dict, Optional, Type
 from pydantic import BaseModel, ValidationError
 
 from langchain_core.output_parsers import JsonOutputParser
@@ -12,7 +12,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers.string import StrOutputParser
 
 from cat.looking_glass.callbacks import NewTokenHandler
-from cat.experimental.form import form, CatForm, CatFormState
+from cat.experimental.form import CatForm, CatFormState
 from cat.plugins.super_cat_form.super_cat_form_agent import SuperCatFormAgent
 from cat.plugins.super_cat_form.super_cat_form_events import FormEventManager, FormEvent, FormEventContext
 from cat.plugins.super_cat_form import prompts
