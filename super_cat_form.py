@@ -577,10 +577,6 @@ class SuperCatForm(CatForm):
 
         log.debug(f"[EVENT: _on_next_form_actived] {self.name} new next form activated")
 
-        new_form = context.data.get("instance")
-
-        new_form.prev_results = self.prev_results.copy()
-        new_form.prev_results[self.name] = [self.form_data_validated]
 
     def _on_previous_form_inactive(self, context: FormEventContext):
         """
@@ -600,12 +596,12 @@ class SuperCatForm(CatForm):
                 self.events.emit(
                     FormEvent.NEXT_FORM_ACTIVE,
                     {
-                        "instance": self.next_form
+                        "instance": self.parent_form
                     },
                     self.name
                 )
 
-                self.next_form.events.emit(
+                self.parent_form.events.emit(
                     FormEvent.PREVIOUS_FORM_INACTIVE,
                     {},
                     self.name
