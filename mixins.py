@@ -46,6 +46,9 @@ class StepByStepMixin:
     
     @staticmethod
     def _create_single_field_models(base_model: type[BaseModel]) -> dict[str, type[BaseModel]]:
+        """
+        For each field in base_model, return a dict with the field name as key, and a BaseModel with only this field as value
+        """
         field_models = {}
         for field_name, field_info in base_model.model_fields.items():
             field_models[field_name] = (
@@ -74,24 +77,10 @@ class StepByStepMixin:
             self.fill_model_with_previous_values
         )
 
-    def next(self):
-        # Set the first form
-        if not self.__is_first_form_set:
-            self.__is_first_form_set = True
-
-            # Modify the active form
-            self.active_form = self.first_form
-
-            # Initialize this form
-            super().next()
-
-            # Return the new form initialiazed
-            return self.first_form.next()
-        
-        return super().next()
-    
     def fill_model_with_previous_values(self, context):
-        
+        """
+        Fill the model with the previous values
+        """
         prev_form_names = list(self.prev_results.keys())
         prev_form_values = list(self.prev_results.values())
 
@@ -127,11 +116,17 @@ class StepByStepMixin:
             )
 
     def create_step_forms(self, context):
+        """
+        Handler for FORM_INITIALIZED event.
+        Creates the step forms for the current form.
+        """
         self._field_models = self._create_single_field_models(self.model_getter())
         self._form_classes = {}
 
         field_names = list(self._field_models.keys())
 
+        # Create the step form class, each of them has a pydantic class with one field of this model_class
+        # Concat the forms eachothers, in reverse (order is not important now)
         last_form = None
         for i in range(len(field_names)):
             field_name = field_names[i]
@@ -141,13 +136,39 @@ class StepByStepMixin:
             self._form_classes[field_name] = last_form
 
         # Now start the first form and specify need set it
+        # Last form created, is the first form to start
         self.first_form: SuperCatForm = last_form(
             cat=self.cat,
             parent_form=self,
         )
+
+        # Need for initialize the form after CheshireCat end it's initialization
         self.__is_first_form_set = False
 
+    def next(self):
+        """
+        Ovveride the next method to set the first form
+        """
+        # Set the first form, if needed
+        if not self.__is_first_form_set:
+            self.__is_first_form_set = True
+
+            # Modify the active form
+            self.active_form = self.first_form
+
+            # Initialize this form
+            super().next()
+
+            # Return the new form initialized
+            return self.first_form.next()
+        
+        return super().next()
+    
+
     def get_step_form_kwargs(self, form_name, model_class: type[BaseModel], field_info, next_form=None) -> dict:
+        """
+        Return the kwargs for the step form class
+        """
         {
             "model_class": model_class,
             "ask_confirm": True,
@@ -158,6 +179,9 @@ class StepByStepMixin:
             }
 
     def _create_form_class(self, form_name, model_class: type[BaseModel], field_info, next_form=None) -> SuperCatForm:
+        """
+        Create a step form class for a single field
+        """
         return type(
             self.format_class_name(f"{model_class.__name__}Form"),
             (SuperCatForm,),
