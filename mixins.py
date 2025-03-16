@@ -9,7 +9,7 @@ from cat.plugins.super_cat_form.prompts import DEFAULT_HUMAN_READABLE_PROMPT
 from cat.plugins.super_cat_form.super_cat_form_events import FormEvent
 
 from cat.log import log
-import pprint
+
 
 class HumanFriendlyInteractionsMixin:
     def _generate_base_message(self):
