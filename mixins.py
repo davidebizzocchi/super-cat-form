@@ -41,6 +41,8 @@ def base_submit(self, form_data):
 class StepByStepMixin:
 
     __is_first_form_set = False
+
+    default_submit = base_submit
     
     @staticmethod
     def _create_single_field_models(base_model: type[BaseModel]) -> dict[str, type[BaseModel]]:
@@ -161,7 +163,7 @@ class StepByStepMixin:
                 "description": field_info.description or f"{model_class.__name__} form",
                 "next_form": next_form,
                 "name": form_name,
-                "submit": base_submit,
+                "submit": self.default_submit,
             }
         )
 
