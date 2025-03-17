@@ -52,37 +52,28 @@ class SuperCatForm(CatForm):
     SuperCatForm extends CatForm with advanced functionality for handling nested forms,
     tool execution, and event management.
     """
-    ner_prompt = prompts.DEFAULT_NER_PROMPT
-    tool_prompt = prompts.DEFAULT_TOOL_PROMPT
-    default_examples = prompts.DEFAULT_TOOL_EXAMPLES
+    ner_prompt: str = prompts.DEFAULT_NER_PROMPT
+    tool_prompt: str = prompts.DEFAULT_TOOL_PROMPT
+    default_examples: str = prompts.DEFAULT_TOOL_EXAMPLES
 
     # Track the form that started this form (if any)
-    parent_form = None
+    parent_form: Type["SuperCatForm"] = None
 
     # Track the next form to activate when this form is closed
-    next_form = None
+    next_form: Type["SuperCatForm"] = None
 
     # List of inside forms, automatically create a form_tool for calling the inside form
-    inside_forms = []
+    inside_forms: List[Type["SuperCatForm"]] = []
     
     # Flag for cleaning up conversation history - each form is a completely new conversation
-    fresh_start = False
+    fresh_start: bool = False
 
     # If True, delete all messages of this form when is closed
-    delete_messages = False
+    delete_messages: bool = False
 
     # Result of (eventual) previos form
     # [form.name, form.form_data_validated]
-    prev_results: Dict[str, Dict] = {}
-
-    ner_prompt: str = prompts.DEFAULT_NER_PROMPT
-    tool_prompt: str = prompts.DEFAULT_TOOL_PROMPT
-    default_examples: List[str] = prompts.DEFAULT_TOOL_EXAMPLES
-    parent_form: Optional['SuperCatForm'] = None
-    next_form: Optional[Type['SuperCatForm']] = None
-    inside_forms: List[Type['SuperCatForm']] = []
-    fresh_start: bool = False
-    delete_messages: bool = False
+    prev_results: Dict[str, BaseModel] = {}
 
     def __init__(self, cat, parent_form=None):
         """
