@@ -47,17 +47,8 @@ class SuperCatForm(CatForm):
     tool_prompt = prompts.DEFAULT_TOOL_PROMPT
     default_examples = prompts.DEFAULT_TOOL_EXAMPLES
 
-    # Track the form that started this form (if any)
-    parent_form = None
-
-    # Flag for cleaning up conversation history - each form is a completely new conversation
-    fresh_start = False
-
     def __init__(self, cat):
         super().__init__(cat)
-
-        if self.fresh_start:
-            self.cat.working_memory.history = self.cat.working_memory.history[-1:]
 
         self.tool_agent = SuperCatFormAgent(self)
         self.events = FormEventManager()
@@ -107,16 +98,6 @@ class SuperCatForm(CatForm):
         """Setup default event handlers for logging"""
         for event in FormEvent:
             self.events.on(event, self._log_event)
-        
-        # Add handler for form exit to restore previous form
-        self.events.on(FormEvent.FORM_CLOSED, self._restore_parent_form)
-        self.events.on(FormEvent.FORM_SUBMITTED, self._restore_parent_form)
-
-    def _restore_parent_form(self, *args, **kwargs):
-        """Restore parent form when this form is closed or submitted"""
-        if self.parent_form is not None:
-            self.cat.working_memory.active_form = self.parent_form
-            log.debug(f"Restored previous form: {self.parent_form.name}")
 
     def _log_event(self, event: FormEventContext):
         log.debug(f"Form {self.name}: {event.event.name} - {event.data}")
@@ -299,30 +280,6 @@ class SuperCatForm(CatForm):
             log.error(e)
 
         return output_model
-
-    def start_sub_form(self, form_class):
-        """
-        Create and activate a new form, saving this form as the parent form
-        
-        Args:
-            form_class: The form class to instantiate
-            
-        Returns:
-            str: The initial message from the new form
-        """
-        # Create the new form instance
-        new_form = form_class(self.cat)
-        
-        # Set the parent form reference
-        new_form.parent_form= self
-        
-        # Activate the new form
-        self.cat.working_memory.active_form = new_form
-        
-        log.debug(f"Started sub-form: {new_form.name} from parent: {self.name}")
-        
-        # Return the first message of the new form
-        return new_form.next()["output"]
 
     def next(self):
 
