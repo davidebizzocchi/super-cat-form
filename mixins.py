@@ -416,3 +416,22 @@ class StepByStepMixin:
                 next_form=next_form
             )
         )
+
+
+class NotCloseMixin:
+    """
+    Mixins that avoid the form can be closed.
+    The FORM_SUBMITTED and FORM_CLOSED events are triggered anyway.
+    """
+
+    def next(self):
+        """Avoid that CatFormState.CLOSED is returned and set CatFormState.INCOMPLETE instead."""
+
+        output = super().next()
+        if self._state == CatFormState.CLOSED:
+            self._state = CatFormState.INCOMPLETE
+        return output
+
+    def check_exit_intent(self):
+        """The form cannot be closed, so this method must always return False."""
+        return False
