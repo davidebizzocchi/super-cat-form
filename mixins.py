@@ -1,7 +1,9 @@
 
+import inspect
 from typing import List, Type
 
 from cat.log import log
+from cat.experimental.form import CatFormState
 
 from cat.plugins.super_cat_form.super_cat_form_events import FormEvent
 from cat.plugins.super_cat_form.super_cat_form import SuperCatForm, form_tool
@@ -157,3 +159,51 @@ class InsideFormMixin:
 
         # Return the first message of the new form
         return new_form.next()["output"]
+
+
+class NextFormMixin(FreshStartMixin):
+    """
+    Mixin that allows to open a new form after the current form is closed.
+    
+    This mixin enables form chaining by specifying a next form to open
+    when the current form is closed or submitted.
+    """
+
+    next_form: SuperCatForm = None
+    show_next_form_message: bool = True
+
+    def _setup_default_handlers(self) -> None:
+        super()._setup_default_handlers()
+
+        self.events.on(FormEvent.FORM_CLOSED, self.start_next_form)
+        self.events.on(FormEvent.FORM_SUBMITTED, self.start_next_form)
+
+        self.events.on(FormEvent.FORM_INITIALIZED, self.initialize_as_next_form)
+
+    def initialize_as_next_form(self, *args, **kwargs) -> None:
+        """Initialize the form as a next form."""
+        self.modify_user_message()
+
+        if inspect.isclass(self.next_form):
+            self.next_form = self.next_form(self.cat)
+
+    def start_next_form(self, *args, **kwargs) -> None:
+        """Open the next form after the current form is closed."""
+        if self.next_form is not None:
+            self.cat.working_memory.active_form = self.next_form
+            self.modify_user_message()
+
+    def next(self):
+        """
+        Override the next method to handle form chaining.
+        
+        Returns:
+            The next form's output or the current form's output
+        """
+        output = super().next()
+
+        if self._state == CatFormState.CLOSED and self.show_next_form_message:
+            self.cat.send_chat_message(output["output"], save=False)
+            return self.next_form.next()
+
+        return output
