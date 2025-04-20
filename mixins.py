@@ -1,3 +1,10 @@
+
+from cat.log import log
+
+from cat.plugins.super_cat_form.super_cat_form_events import FormEvent
+from cat.plugins.super_cat_form.super_cat_form import SuperCatForm
+
+
 class FreshStartMixin:
     """
     Mixin that initializes forms as independent conversations.
@@ -38,3 +45,32 @@ class FreshStartMixin:
         """
         self.cat.working_memory.user_message_json.text = text
 
+
+class SubFormMixin:
+    """
+    A mixin that allows a form to be used as a subform.
+    
+    This mixin enables form nesting by tracking the parent form and handling
+    the restoration of the parent form when the subform is closed or submitted.
+    """
+
+    # Track the form that started this form (if any)
+    parent_form: SuperCatForm = None
+
+    def _setup_default_handlers(self) -> None:
+        super()._setup_default_handlers()
+
+        # Add handler for form exit to restore previous form
+        self.events.on(FormEvent.FORM_CLOSED, self._restore_parent_form)
+        self.events.on(FormEvent.FORM_SUBMITTED, self._restore_parent_form)
+
+    def _restore_parent_form(self, *args, **kwargs) -> None:
+        """
+        Restore parent form when this form is closed or submitted.
+        
+        This method is called when the form is closed or submitted to ensure
+        the parent form becomes active again in the working memory.
+        """
+        if self.parent_form is not None:
+            self.cat.working_memory.active_form = self.parent_form
+            log.debug(f"Restored previous form: {self.parent_form.name}")
