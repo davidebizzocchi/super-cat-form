@@ -1,8 +1,11 @@
 
+from typing import List, Type
+
 from cat.log import log
 
 from cat.plugins.super_cat_form.super_cat_form_events import FormEvent
-from cat.plugins.super_cat_form.super_cat_form import SuperCatForm
+from cat.plugins.super_cat_form.super_cat_form import SuperCatForm, form_tool
+from cat.plugins.super_cat_form.utils import format_class_name
 
 
 class FreshStartMixin:
@@ -74,3 +77,83 @@ class SubFormMixin:
         if self.parent_form is not None:
             self.cat.working_memory.active_form = self.parent_form
             log.debug(f"Restored previous form: {self.parent_form.name}")
+
+
+class InsideFormMixin:
+    """
+    Mixin that enables a form to contain and manage sub-forms.
+    
+    This mixin provides functionality to associate and manage sub-forms within
+    a parent form, including automatic tool generation for each sub-form.
+    """
+
+    # List of sub-forms associated with this form
+    sub_forms: List[Type[SuperCatForm]] = []
+
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize the mixin and associate sub-forms.
+        """
+        self.assoc_sub_forms(self.sub_forms)
+        super().__init__(*args, **kwargs)
+
+    @classmethod
+    def assoc_sub_forms(cls, sub_forms: List[Type[SuperCatForm]]) -> None:
+        """
+        Associate sub-forms with the current form and create corresponding tools.
+        
+        This method:
+        1. Validates that all sub-forms are proper SuperCatForm subclasses
+        2. Ensures each sub-form has the SubFormMixin functionality
+        3. Creates and attaches tools for starting each sub-form
+        
+        Args:
+            sub_forms (List[Type[SuperCatForm]]): List of sub-forms to associate
+            
+        Raises:
+            ValueError: If any sub-form is not a subclass of SuperCatForm
+        """
+        for form in sub_forms:
+            # Validate form type
+            if not issubclass(form, SuperCatForm):
+                raise ValueError(f"All sub-forms must be subclasses of SuperCatForm")
+
+            # Ensure form has SubFormMixin functionality
+            if not issubclass(form, SubFormMixin):
+                form = type(form, (SubFormMixin, form), {})
+
+            # Create a tool for starting the sub-form
+            def recall_sub_form_tool(self):
+                return self.start_sub_form(form)
+
+            # Set tool metadata
+            recall_sub_form_tool.__name__ = format_class_name(f"{form.name}_tool")
+            recall_sub_form_tool.__doc__ = f"Collect the {form.name} information"
+
+            # Create and attach the form tool
+            recall_method = form_tool(recall_sub_form_tool, return_direct=True, examples=form.start_examples)
+            setattr(cls, recall_sub_form_tool.__name__, recall_method)
+
+    def start_sub_form(self, form_class: Type[SuperCatForm]) -> str:
+        """
+        Create and activate a new form, saving this form as the parent form.
+        
+        Args:
+            form_class (Type[SuperCatForm]): The form class to instantiate
+            
+        Returns:
+            str: The initial message from the new form
+        """
+        # Create the new form instance
+        new_form = form_class(self.cat)
+
+        # Set the parent form reference
+        new_form.parent_form = self
+
+        # Activate the new form
+        self.cat.working_memory.active_form = new_form
+
+        log.debug(f"Started sub-form: {new_form.name} from parent: {self.name}")
+
+        # Return the first message of the new form
+        return new_form.next()["output"]
