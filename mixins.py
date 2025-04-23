@@ -135,8 +135,36 @@ class InsideFormMixin:
             recall_sub_form_tool.__doc__ = f"Collect the {form.name} information"
 
             # Create and attach the form tool
-            recall_method = form_tool(recall_sub_form_tool, return_direct=True, examples=form.start_examples)
+            if hasattr(form, "resolve_form_action_name"):
+                form.resolve_form_action_name()
+            if hasattr(form, "form_action_name") and form.form_action_name:
+                recall_method = form_tool(recall_sub_form_tool, return_direct=True, examples=form.start_examples, action=form.form_action_name)
+            else:
+                recall_method = form_tool(recall_sub_form_tool, return_direct=True, examples=form.start_examples)
             setattr(cls, recall_sub_form_tool.__name__, recall_method)
+
+    def get_sub_form_kwargs(self, form_class: Type[SuperCatForm]) -> Dict[str, Any]:
+        """
+        Get the keyword arguments for the sub-form.
+        """
+        log.error(f"get_sub_form_kwargs of InsideFormMixin")
+        return {
+            "cat": self.cat,
+        }
+    
+    def check_start_sub_form(self, form_instance: SuperCatForm) -> bool:
+        """
+        Check if the sub-form can be started.
+        """
+        return True
+    
+    def instance_sub_form(self, form_class: Type[SuperCatForm]) -> SuperCatForm:
+        """
+        Get the instance of the sub-form.
+        """
+        form = form_class(**self.get_sub_form_kwargs(form_class))
+        form.parent_form = self
+        return form
 
     def start_sub_form(self, form_class: Type[SuperCatForm]) -> str:
         """
@@ -149,10 +177,10 @@ class InsideFormMixin:
             str: The initial message from the new form
         """
         # Create the new form instance
-        new_form = form_class(self.cat)
+        new_form = self.instance_sub_form(form_class)
 
-        # Set the parent form reference
-        new_form.parent_form = self
+        if not self.check_start_sub_form(new_form):
+            return self.message()["output"]
 
         # Activate the new form
         self.cat.working_memory.active_form = new_form
