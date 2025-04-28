@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Dict, Literal, Set, Union
+from typing import Any, Dict, List, Literal, Set, Type, Union
 
 from cat.plugins.super_cat_form.workflows.action import Action
 
@@ -27,9 +27,19 @@ class WorkflowManager:
         """Clears all stored context data."""
         self._context.clear()
 
-    def set_context(self, key: Union[str, Action], value: Any):
+    def set_context(self, key: Union[str, Action], value: Any, mode: Literal["set", "append"] = "set"):
         """Store a value in the workflow context."""
-        self._execute_context_operation("add", key, value)
+        self._execute_context_operation("add", key, value, mode)
+
+    def update_context(self, key: Union[str, Action], value: Any, **kwargs):
+        """
+        Update a value in the workflow context.
+        In kwargs set the search fields.
+        """
+        if not kwargs:
+            self._execute_context_operation("add", key, value)
+        else:
+            self._execute_context_operation("update", key, value, **kwargs)
 
     def remove_context(self, key: Union[str, Action]):
         """Remove a value from the workflow context."""
@@ -43,13 +53,68 @@ class WorkflowManager:
         """Check if a key exists in the workflow context."""
         return self._execute_context_operation("has", key)
         
-    def _execute_context_operation(self, method: Literal["add", "delete", "get", "has"], key: Union[str, Action], value: Any = None):
+    def _execute_context_operation(self, method: Literal["add", "delete", "get", "has", "update"], key: Union[str, Action], value: Any = None, mode: Literal["set", "append"] = "set", **kwargs):
         """Execute an operation on the workflow context."""
         if isinstance(key, Action):
             key = key.name
 
         if method == "add":
-            self._context[key] = value
+            if mode == "set":
+                self._context[key] = value
+
+            elif mode == "append":
+                if not value:
+                    self._context[key] = []
+                    return
+
+                if key in self._context:
+                    if not self._context[key]:
+                        self._context[key] = [value]
+
+                    if not isinstance(self._context[key], List):
+                        self._context[key] = [self._context[key], value]
+                    else:
+                        self._context[key].append(value)
+                else:
+                    self._context[key] = [value]
+
+        elif method == "update":
+            if not kwargs:
+                return
+            
+            if key in self._context:
+                if isinstance(self._context[key], List):
+                    for idx, item in enumerate(self._context[key]):
+                        if isinstance(item, Dict):
+                            for k, v in kwargs.items():
+                                if not k in item:
+                                    break
+
+                                if item[k] != v:
+                                    break
+                            else:
+                                if value:
+                                    self._context[key][idx] = value
+                                else:
+                                    del self._context[key][idx]
+
+                        # Item is not Dict
+                        else:
+                            for k, v in kwargs.items():
+                                if not hasattr(item, k):
+                                    break
+
+                                if getattr(item, k) != v:
+                                    break
+                            else:
+                                if value:
+                                    self._context[key][idx] = value
+                                else:
+                                    del self._context[key][idx]
+
+                else:
+                    self._context[key] = [self._context[key], value]
+
         elif method == "delete":
             self._context.pop(key, None)
         elif method == "get":
