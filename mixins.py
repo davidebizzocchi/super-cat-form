@@ -1,6 +1,6 @@
 
 import inspect
-from typing import Any, Dict, List, Optional, Type, Tuple
+from typing import Any, Callable, Dict, List, Optional, Type, Tuple
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
@@ -26,14 +26,14 @@ class FreshStartMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
         if self.fresh_start:
             self.clear_history()
 
     def clear_history(self, index: int = -1) -> None:
         """
         Clear the conversation history, optionally keeping the last message.
-        
+
         Args:
             index (int): Index of the message to keep. Defaults to -1 (last message).
         """
@@ -46,7 +46,7 @@ class FreshStartMixin:
     def modify_user_message(self, text: str = "") -> None:
         """
         Modify the current user message.
-        
+
         Args:
             text (str): New text for the user message. Defaults to empty string.
         """
@@ -56,7 +56,7 @@ class FreshStartMixin:
 class SubFormMixin:
     """
     A mixin that allows a form to be used as a subform.
-    
+
     This mixin enables form nesting by tracking the parent form and handling
     the restoration of the parent form when the subform is closed or submitted.
     """
@@ -74,7 +74,7 @@ class SubFormMixin:
     def _restore_parent_form(self, *args, **kwargs) -> None:
         """
         Restore parent form when this form is closed or submitted.
-        
+
         This method is called when the form is closed or submitted to ensure
         the parent form becomes active again in the working memory.
         """
@@ -86,7 +86,7 @@ class SubFormMixin:
 class InsideFormMixin:
     """
     Mixin that enables a form to contain and manage sub-forms.
-    
+
     This mixin provides functionality to associate and manage sub-forms within
     a parent form, including automatic tool generation for each sub-form.
     """
@@ -101,19 +101,45 @@ class InsideFormMixin:
         self.assoc_sub_forms(self.sub_forms)
         super().__init__(*args, **kwargs)
 
+
+    @staticmethod
+    def create_sub_form_tool(form: Type[SuperCatForm], func: Callable, return_direct: bool = False, examples: Optional[List[str]] = None, *args, **kwargs) -> Any:
+        """
+        Create a tool for starting a sub-form.
+
+        Args:
+            form (Type[SuperCatForm]): The sub-form class to be used
+            func (Callable): The function to be used as a tool
+            return_direct (bool): Whether to return the tool directly or not
+            examples (Optional[List[str]]): List of example inputs for the tool
+        """
+
+        return form_tool(func, return_direct=return_direct, examples=examples)
+
+    @classmethod
+    def create_sub_form_function(self, form):
+        """
+        Create the tool function that start the sub_form
+        """
+
+        def recall_sub_form_tool(self, *args, **kwargs):
+            return self.start_sub_form(form)
+
+        return recall_sub_form_tool
+
     @classmethod
     def assoc_sub_forms(cls, sub_forms: List[Type[SuperCatForm]]) -> None:
         """
         Associate sub-forms with the current form and create corresponding tools.
-        
+
         This method:
         1. Validates that all sub-forms are proper SuperCatForm subclasses
         2. Ensures each sub-form has the SubFormMixin functionality
         3. Creates and attaches tools for starting each sub-form
-        
+
         Args:
             sub_forms (List[Type[SuperCatForm]]): List of sub-forms to associate
-            
+
         Raises:
             ValueError: If any sub-form is not a subclass of SuperCatForm
         """
@@ -126,39 +152,39 @@ class InsideFormMixin:
             if not issubclass(form, SubFormMixin):
                 form = type(form, (SubFormMixin, form), {})
 
-            # Create a tool for starting the sub-form
-            def recall_sub_form_tool(self):
-                return self.start_sub_form(form)
+            recall_sub_form_tool = cls.create_sub_form_function(form)
 
             # Set tool metadata
             recall_sub_form_tool.__name__ = format_class_name(f"{form.name}_tool")
-            recall_sub_form_tool.__doc__ = f"Collect the {form.name} information"
+            if not recall_sub_form_tool.__doc__:
+                recall_sub_form_tool.__doc__ = f"Collect the {form.name} information"
 
-            # Create and attach the form tool
-            if hasattr(form, "resolve_form_action_name"):
-                form.resolve_form_action_name()
-            if hasattr(form, "form_action_name") and form.form_action_name:
-                recall_method = form_tool(recall_sub_form_tool, return_direct=True, examples=form.start_examples, action=form.form_action_name)
-            else:
-                recall_method = form_tool(recall_sub_form_tool, return_direct=True, examples=form.start_examples)
+            recall_method = cls.create_sub_form_tool(
+                form=form,
+                func=recall_sub_form_tool,
+                return_direct=True,
+                examples=form.start_examples
+            )
+
+            recall_method.__doc__ = f"Collect the {form.name} information"
+
             setattr(cls, recall_sub_form_tool.__name__, recall_method)
 
     def get_sub_form_kwargs(self, form_class: Type[SuperCatForm]) -> Dict[str, Any]:
         """
         Get the keyword arguments for the sub-form.
         """
-        log.error(f"get_sub_form_kwargs of InsideFormMixin")
         return {
             "cat": self.cat,
         }
-    
+
     def check_start_sub_form(self, form_instance: SuperCatForm) -> bool:
         """
         Check if the sub-form can be started.
         """
         return True
-    
-    def instance_sub_form(self, form_class: Type[SuperCatForm]) -> SuperCatForm:
+
+    def instance_sub_form(self, form_class: Type[SuperCatForm], *args, **kwargs) -> SuperCatForm:
         """
         Get the instance of the sub-form.
         """
@@ -166,18 +192,18 @@ class InsideFormMixin:
         form.parent_form = self
         return form
 
-    def start_sub_form(self, form_class: Type[SuperCatForm]) -> str:
+    def start_sub_form(self, form_class: Type[SuperCatForm], *args, **kwargs) -> str:
         """
         Create and activate a new form, saving this form as the parent form.
-        
+
         Args:
             form_class (Type[SuperCatForm]): The form class to instantiate
-            
+
         Returns:
             str: The initial message from the new form
         """
         # Create the new form instance
-        new_form = self.instance_sub_form(form_class)
+        new_form = self.instance_sub_form(form_class, *args, **kwargs)
 
         if not self.check_start_sub_form(new_form):
             return self.message()["output"]
@@ -194,7 +220,7 @@ class InsideFormMixin:
 class NextFormMixin(FreshStartMixin):
     """
     Mixin that allows to open a new form after the current form is closed.
-    
+
     This mixin enables form chaining by specifying a next form to open
     when the current form is closed or submitted.
     """
@@ -226,7 +252,7 @@ class NextFormMixin(FreshStartMixin):
     def next(self):
         """
         Override the next method to handle form chaining.
-        
+
         Returns:
             The next form's output or the current form's output
         """
@@ -243,7 +269,7 @@ class StepByStepMixin:
     """
     A mixin that converts a single complex form into multiple sequential single-field forms,
     allowing users to complete forms step by step.
-    
+
     By default step-forms use FreshStartMixin, so their are independent from the conversation.
     """
 
@@ -259,10 +285,10 @@ class StepByStepMixin:
     def field_form_submit(self, form_data: dict) -> dict:
         """
         Default submission handler for forms.
-        
+
         Args:
             form_data: The data submitted through the form.
-            
+
         Returns:
             dict: Response containing the output message.
         """
@@ -273,18 +299,18 @@ class StepByStepMixin:
 
         self.main_form.form_data[self.field_name] = getattr(form_result, self.field_name, None)
         return {"output": f"{form_result}"}
-    
+
     @staticmethod
     def _create_single_field_models(base_model: Type[BaseModel]) -> Dict[str, Tuple[Type[BaseModel], FieldInfo]]:
         """
         Creates individual Pydantic models for each field in the base model.
-        
+
         For each field in base_model, returns a dict with the field name as key,
         and a tuple containing a new BaseModel with only this field and the field info.
-        
+
         Args:
             base_model: The original Pydantic model to split into single fields
-            
+
         Returns:
             Dict[str, Tuple[Type[BaseModel], FieldInfo]]: Mapping of field names to (model, field_info) tuples
         """
@@ -323,7 +349,7 @@ class StepByStepMixin:
         """
         Creates individual step forms for each field in the model.
         Triggered on FORM_INITIALIZED event.
-        
+
         Args:
             context: Event context containing form initialization data
         """
@@ -351,7 +377,7 @@ class StepByStepMixin:
     def next(self):
         """
         Override the standard next method to handle step-by-step form initialization.
-        
+
         Returns:
             The next form's output or the current form's output
         """
@@ -366,20 +392,20 @@ class StepByStepMixin:
 
             # Return the new form initialized
             return self.first_form.next()
-        
+
         return super().next()
 
     def prepare_next_step_iteration(self):
         """
         Prepare the form for a new iteration of the step-by-step process.
-        
+
         This method:
         1. Resets the form initialization flag to allow starting a new iteration
         2. Creates a new instance of the first form in the sequence
         """
         self.__is_first_form_initialized = False
         self.first_form = self.first_form_class(self.cat)
-    
+
     def get_step_form_kwargs(
             self,
             form_name: str,
@@ -390,14 +416,14 @@ class StepByStepMixin:
         ) -> Dict[str, Any]:
         """
         Generate keyword arguments for creating a step form class.
-        
+
         Args:
             form_name: Name of the form (usually the field name)
             model_class: The single-field Pydantic model for this step
             field_info: Field metadata from the original model
             field_name: Name of the field being processed
             next_form: The next form in the sequence
-            
+
         Returns:
             Dict[str, Any]: Keyword arguments for creating the form class
         """
@@ -421,13 +447,13 @@ class StepByStepMixin:
         ) -> Type[SuperCatForm]:
         """
         Create a single step form class for one field.
-        
+
         Args:
             field_name: Name of the form/field
             model_class: The Pydantic model for this single field
             field_info: Field metadata
             next_form: The next form in the sequence
-            
+
         Returns:
             Type[SuperCatForm]: A new form class for this step
         """
@@ -461,5 +487,9 @@ class NotCloseMixin:
         return output
 
     def check_exit_intent(self):
+        """The form cannot be closed, so this method must always return False."""
+        return False
+
+    def confirm(self):
         """The form cannot be closed, so this method must always return False."""
         return False
