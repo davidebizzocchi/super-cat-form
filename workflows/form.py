@@ -1,7 +1,6 @@
 from cat.plugins.super_cat_form.workflows.manager import WorkflowManager
 from cat.plugins.super_cat_form.workflows.agent import WorkflowAgent
 from cat.plugins.super_cat_form.super_cat_form import SuperCatForm
-from cat.log import log
 
 
 class WorkflowForm(SuperCatForm):

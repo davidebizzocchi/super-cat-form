@@ -54,7 +54,7 @@ class WorkflowAgent(SuperCatFormAgent):
     
     def _can_execute_tool(self, tool: Any) -> bool:
         """
-        Determine if a tool can be executed based on its dependency attribute.
+        Determine if a tool can be executed based on its action attribute.
         
         Args:
             tool: The tool to check
@@ -62,7 +62,7 @@ class WorkflowAgent(SuperCatFormAgent):
         Returns:
             True if the tool can be executed, False otherwise
         """
-        dependency = getattr(tool, "_action", None)
-        if dependency is None:
+        action = getattr(tool, "_action", None)
+        if action is None:
             return True
-        return self.workflow.can_execute(dependency)
+        return self.workflow.can_execute(action)

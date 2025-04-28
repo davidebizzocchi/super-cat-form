@@ -37,7 +37,7 @@ class FormActionMixin:
         """
         Save the form data as an action result in the workflow context.
         """
-        self.workflow.set_context(self.form_action, self.form_data_validated)
+        self.workflow.set_context(self.action_name, self.form_data_validated)
 
     @classmethod
     def resolve_action_name(cls):
