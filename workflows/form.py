@@ -6,7 +6,7 @@ from cat.plugins.super_cat_form.super_cat_form import SuperCatForm
 class WorkflowForm(SuperCatForm):
     """
     Form with integrated workflow management for orchestrating multi-step processes.
-    
+
     This form type:
     1. Uses a workflow manager to track dependencies between operations
     2. Provides a specialized agent that respects the workflow sequence
@@ -16,7 +16,7 @@ class WorkflowForm(SuperCatForm):
     def __init__(self, cat, workflow: WorkflowManager = None):
         """
         Initialize a workflow-enabled form.
-        
+
         Args:
             cat: The CheshireCat instance
             workflow: Optional workflow manager. If not provided, a new one is created.

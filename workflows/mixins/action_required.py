@@ -5,7 +5,7 @@ from cat.experimental.form import CatFormState
 class ActionRequiredMixin:
     """
     Mixin that requires actions to be completed before allowing form submission.
-    
+
     This enforces workflow ordering by blocking form submission until
     required actions are satisfied.
     """
@@ -28,7 +28,7 @@ class ActionRequiredMixin:
         if self._action_dependencies_status == CatFormState.INCOMPLETE:
             return False
         return super().check_exit_intent()
-    
+
     def confirm(self):
         """
         Block form submission if required actions aren't satisfied.
@@ -36,7 +36,7 @@ class ActionRequiredMixin:
         if self._action_dependencies_status == CatFormState.INCOMPLETE:
             return False
         return super().confirm()
-    
+
     def validate(self):
         """
         Override validation to check action status.
@@ -56,7 +56,7 @@ class ActionRequiredMixin:
         """
         self._check_required_actions()
         return super().next()
-    
+
     def _check_required_actions(self):
         """
         Check if all required actions have completed.

@@ -4,7 +4,7 @@ from cat.plugins.super_cat_form.super_cat_form_events import FormEvent, FormEven
 class FormActionMixin:
     """
     Mixin that registers a form as an action in the workflow.
-    
+
     This allows forms to become action nodes that other workflow
     components can depend on.
     """

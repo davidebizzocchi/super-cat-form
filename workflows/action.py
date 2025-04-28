@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 class Action(BaseModel):
     """
     Represents a named executable component with dependency relationships.
-    
+
     An Action can have dependencies on other Actions that must be completed before
     it can be executed.
     """
@@ -23,14 +23,14 @@ class Action(BaseModel):
         Requirements can be specified as:
         - Action objects: Will extract the name
         - Strings: Used directly as dependency names
-        
+
         This ensures consistent internal representation using dependency names.
         """
         if not v:
             return set()
-        
+
         normalized_requirements = set()
-        
+
         for requirement in v:
             if hasattr(requirement, 'name'):  # Could be an Action object
                 normalized_requirements.add(requirement.name)

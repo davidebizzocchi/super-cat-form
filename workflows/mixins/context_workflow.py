@@ -14,7 +14,7 @@ class ContextWorkflowMixin:
     def get_sub_form_kwargs(self, form_class: Type[SuperCatForm]) -> Dict[str, Any]:
         """
         Get initialization parameters for sub-forms.
-        
+
         Ensures the workflow is properly passed to child forms.
         """
         return {
@@ -36,7 +36,7 @@ class ContextWorkflowMixin:
     def create_sub_form_tool(form: Type[SuperCatForm], func: Callable, return_direct: bool = False, examples: Optional[List[str]] = None, *args, **kwargs) -> Any:
         """
         Create a tool for starting a sub-form.
-        
+
         Args:
             form (Type[SuperCatForm]): The sub-form class to be used
             func (Callable): The function to be used as a tool

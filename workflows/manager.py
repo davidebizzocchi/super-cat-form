@@ -7,7 +7,7 @@ from cat.plugins.super_cat_form.workflows.action import Action
 class WorkflowManager:
     """
     Manage action workflow and their context.
-    
+
     Features:
     - Context tracking: Manages information through key-value pairs
     - Dependency resolution: Tracks and resolves dependencies between actions
@@ -48,11 +48,11 @@ class WorkflowManager:
     def get_context(self, key: Union[str, Action]) -> Any:
         """Retrieve a value from the workflow context."""
         return self._execute_context_operation("get", key)
-        
+
     def has_context(self, key: Union[str, Action]) -> bool:
         """Check if a key exists in the workflow context."""
         return self._execute_context_operation("has", key)
-        
+
     def _execute_context_operation(self, method: Literal["add", "delete", "get", "has", "update"], key: Union[str, Action], value: Any = None, mode: Literal["set", "append"] = "set", **kwargs):
         """Execute an operation on the workflow context."""
         if isinstance(key, Action):
@@ -81,7 +81,7 @@ class WorkflowManager:
         elif method == "update":
             if not kwargs:
                 return
-            
+
             if key in self._context:
                 if isinstance(self._context[key], List):
                     for idx, item in enumerate(self._context[key]):
@@ -123,7 +123,7 @@ class WorkflowManager:
             return key in self._context
 
 
-    # Action Management    
+    # Action Management
     def _get_action_id(self, name: Union[str, Action]) -> str:
         """Get the identifier for an action."""
         if isinstance(name, Action):
@@ -133,7 +133,7 @@ class WorkflowManager:
             raise ValueError(f"Invalid action name: {name}")
 
         return name
-    
+
     def _get_action_from_id(self, id: Union[str, Action]) -> Action:
         """Retrieve an action by its identifier."""
         if not id:
@@ -150,7 +150,7 @@ class WorkflowManager:
     def register_action(self, action: Action):
         """
         Register an action in the workflow.
-        
+
         Once registered, the action's requirements will be tracked
         and it will only be marked as ready when all requirements are satisfied.
         """
@@ -172,7 +172,7 @@ class WorkflowManager:
     def remove_action(self, action_name: Union[str, Action]):
         """
         Remove an action from the workflow.
-        
+
         This will:
         1. Remove the action from the registry
         2. Update any operations that depend on it
@@ -201,7 +201,7 @@ class WorkflowManager:
     def _resolve_action(self, action: Action):
         """
         Determine if an action's requirements are satisfied.
-        
+
         Returns True if all requirements are met, False otherwise.
         """
         action = self._get_action_from_id(action)
@@ -220,11 +220,11 @@ class WorkflowManager:
         # Update unresolved count
         self._unresolved_requirements[action.name] = unresolved_count
         return resolved
-    
+
     def _update_dependent_operations(self, action: Action):
         """
         Update operations that depend on this action.
-        
+
         When an action is satisfied, this updates the unresolved count
         for all operations that depend on it.
         """
@@ -236,7 +236,7 @@ class WorkflowManager:
         # Update each dependent operation
         for action_name in dependent_actions:
             unresolved_count = self._unresolved_requirements[action_name]
-            
+
             # Decrement the unresolved count
             unresolved_count -= 1
             self._unresolved_requirements[action_name] = unresolved_count
@@ -252,15 +252,15 @@ class WorkflowManager:
     def can_execute(self, name: Union[str, Action]) -> bool:
         """Check if an action can be executed."""
         return self.is_action_ready(name)
-    
+
     def is_action_ready(self, name: Union[str, Action], safe: bool = True) -> bool:
         """
         Determine if an action is ready for execution.
-        
+
         Args:
             name: The action to check
             safe: If True, will return True for unknown actions
-            
+
         Returns:
             True if the action can be executed, False otherwise
         """

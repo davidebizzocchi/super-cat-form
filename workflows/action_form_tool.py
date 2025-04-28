@@ -18,7 +18,7 @@ def action_tool(func=None, *, return_direct=False, examples=None, action=None, s
 
         if action and save_action_result:
             self.workflow.set_context(action, result)
-        
+
         return result
 
 
